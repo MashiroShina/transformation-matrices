@@ -2,14 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TransformationGrid : MonoBehaviour {
+public class TransformationGridMatrix : MonoBehaviour {
+
     public Transform prefab;
 
     public int gridResolution = 10;
 
     Transform[] grid;
 
-    private List<Transformation> transformations;
+    private List<TransformationMatrix> transformationMatrices;
+
     void Awake()
     {
         grid = new Transform[gridResolution * gridResolution * gridResolution];
@@ -23,15 +25,15 @@ public class TransformationGrid : MonoBehaviour {
                 }
             }
         }
-        transformations=new List<Transformation>();
+        transformationMatrices = new List<TransformationMatrix>();
     }
 
     Transform CreateGridPoint(int x, int y, int z)
     {
         Transform point = Instantiate<Transform>(prefab);
         point.localPosition = GetCoordinates(x, y, z);
-        point.GetComponent<MeshRenderer>().material.color=new Color(
-            (float)x/gridResolution,
+        point.GetComponent<MeshRenderer>().material.color = new Color(
+            (float)x / gridResolution,
             (float)y / gridResolution,
             (float)z / gridResolution
             );
@@ -47,16 +49,25 @@ public class TransformationGrid : MonoBehaviour {
     }
     Vector3 TransformPoint(int x, int y, int z)
     {
-        Vector3 coordinates = GetCoordinates(x, y, z);//Get the LocationPosition of each cube
-        for (int i = 0; i < transformations.Count; i++)
+        Vector3 coordinates = GetCoordinates(x, y, z);
+        return transformation.MultiplyPoint(coordinates);
+    }
+    Matrix4x4 transformation;
+    void UpdateTransformation()
+    {
+        GetComponents<TransformationMatrix>(transformationMatrices);
+        if (transformationMatrices.Count > 0)
         {
-            coordinates = transformations[i].Apply(coordinates);//Get the transformed position
+            transformation = transformationMatrices[0].Matrix;
+            for (int i = 1; i < transformationMatrices.Count; i++)
+            {
+                transformation = transformationMatrices[i].Matrix * transformation;
+            }
         }
-        return coordinates;
-    }	
-	// Update is called once per frame
-	void Update () {
-	    GetComponents<Transformation>(transformations);
+    }
+    void Update()
+    {
+        UpdateTransformation();
         for (int i = 0, z = 0; z < gridResolution; z++)
         {
             for (int y = 0; y < gridResolution; y++)
@@ -69,5 +80,4 @@ public class TransformationGrid : MonoBehaviour {
         }
     }
 
-   
 }
